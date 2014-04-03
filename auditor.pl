@@ -19,7 +19,7 @@ my @found;
 my @scope;
 
 #read in XML config file
-my $search = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], ForceContent => 1);
+my $seedfile = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], ForceContent => 1);
 
 
 ##seperate regexs, golden config lines and lines to be grepped into arrays
@@ -33,7 +33,7 @@ my $search = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], Fo
 #  print $_."\n";
 #}
 
-#print Dumper($search);
+#print Dumper($seedfile);
 
 
 #Begin processing data input from XML config file.  The default data strcuture used by XML::Simple is too cumbersome.
@@ -52,8 +52,8 @@ my $search = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], Fo
 #                     },
 #
 
-if ($search->{"golden"}) { 
-  @golden = @ { $search->{"golden"} }; 
+if ($seedfile->{"golden"}) { 
+  @golden = @ { $seedfile->{"golden"} }; 
   foreach $currentline(@golden) {
     if ($currentline->{'stanza'}) {
       @current_array = split(',', $currentline->{'stanza'});
@@ -63,8 +63,8 @@ if ($search->{"golden"}) {
 }
 
 #pull list of regular experssions into a list of hash references same as above
-if ($search->{"regex"}) { 
-  @regex = @ { $search->{"regex"} };
+if ($seedfile->{"regex"}) { 
+  @regex = @ { $seedfile->{"regex"} };
   foreach $currentline(@regex) {
     if ($currentline->{'stanza'}) {
       @current_array = split(',', $currentline->{'stanza'});
@@ -74,8 +74,8 @@ if ($search->{"regex"}) {
 }
 
 #pull list of device configs into an array
-if ($search->{"configfiles"}) { 
-  @configfiles =  split( "\n" , $search->{"configfiles"}->[0]->{"content"} ); 
+if ($seedfile->{"configfiles"}) { 
+  @configfiles =  split( "\n" , $seedfile->{"configfiles"}->[0]->{"content"} ); 
   shift @configfiles; 
   foreach (@configfiles) {
     $_  =~ s/\s+|\n+//g;
