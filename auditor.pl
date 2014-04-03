@@ -125,7 +125,6 @@ foreach (@configfiles) {
        #print "regex = $_->{'content'}\n";
         $current_regex = qr/$_->{'content'}/is;
 #       if (@current_stanza ~~ @{ $_->{'stanza'} })  {
-          if (1==1){}  
           if ($search_input ~~ m/$current_regex/) {
             print OUTFILE "$search_input \n";
 #           print "$search_input matches $current_regex in @current_stanza  \n";
