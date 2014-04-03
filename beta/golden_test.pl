@@ -16,7 +16,6 @@ my $currentline;
 my @current_array;
 my $current_regex;
 my @found;
-my @scope;
 
 #read in XML config file
 my $search = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], ForceContent => 1);
@@ -51,6 +50,15 @@ my $search = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], Fo
 #                       'stanza' => 'interface'
 #                     },
 #
+if ($search->{"grep"}) { 
+  @grep = $search->{"grep"}; 
+  foreach $currentline(@grep) {
+    if ($currentline->{'stanza'}) {
+      @current_array = split(',', $currentline->{'stanza'});
+      $currentline->{'stanza'} =  \@current_array;
+    }
+  }
+}
 
 if ($search->{"golden"}) { 
   @golden = @ { $search->{"golden"} }; 
@@ -119,34 +127,15 @@ foreach (@configfiles) {
      #print "current stanza=@current_stanza\n";
      #print "previous stanza=@previous_stanza\n";
     }
-    foreach (@regex) {
-      if ($_->{'stanza'}) {
-       #print "comparing @current_stanza and @{ $_->{'stanza'} }\n"; 
-       #print "regex = $_->{'content'}\n";
-        $current_regex = qr/$_->{'content'}/is;
-#       if (@current_stanza ~~ @{ $_->{'stanza'} })  {
-          if (1==1){}  
-          if ($search_input ~~ m/$current_regex/) {
-            print OUTFILE "$search_input \n";
-#           print "$search_input matches $current_regex in @current_stanza  \n";
-            push @found , $search_input;
-          }
-#       }
-      }       
-    }  
 
+    foreach (@golden) {
+  
+    }
+
+    foreach (@grep) {
+  
+    }
 }
 }
-
-foreach (@golden) {
-  $current_regex = qr/$_->{'scope'}/is;
-  @scope = grep /set $current_regex/, @currentfile;           
-  foreach(@scope) {
-    $search_input = $_; 
-    $search_input =~ s/\r\n/\n/g;
-  }
-}
-
-
 close OUTFILE;
 #print @found;
