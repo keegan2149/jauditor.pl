@@ -1,5 +1,5 @@
-/config
-/Config
+/config/*
+/Config/*
 /blib/
 /.build/
 _build/
