@@ -10,6 +10,7 @@ my $compare;
 my @search_options;
 my @grep;
 my @golden;
+my @golden_lines;
 my @configfiles;
 my @regex;
 my $currentline;
@@ -77,6 +78,7 @@ if ($seedfile->{"regex"}) {
 if ($seedfile->{"configfiles"}) { 
   @configfiles =  split( "\n" , $seedfile->{"configfiles"}->[0]->{"content"} ); 
   shift @configfiles; 
+  pop @configfiles;
   foreach (@configfiles) {
     $_  =~ s/\s+|\n+//g;
   }
@@ -126,15 +128,16 @@ foreach (@configfiles) {
         $current_regex = qr/$_->{'content'}/is;
 #       if (@current_stanza ~~ @{ $_->{'stanza'} })  {
           if ($search_input ~~ m/$current_regex/) {
+            #dud.. need to figure out why nothing is written to the output file
+            #also need to organize output by regex using the array.  hash maybe?
             print OUTFILE "$search_input \n";
 #           print "$search_input matches $current_regex in @current_stanza  \n";
-            push @found , $search_input;
+            push @found , "$search_input\n";
           }
 #       }
       }       
     }  
-
-}
+  }
 }
 
 foreach (@golden) {
