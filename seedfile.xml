@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
   <options>
-   <regex stanza="interfaces,irb">^ip.*$</regex> 
-   <regex stanza="interfaces,irb">^.*interface.*$</regex>  
+   <regex stanza="interfaces,irb">ip</regex> 
    <golden stanza="interfaces,irb">virtual-inet6-address </golden>
    <golden stanza="interfaces,irb">virtual-link-local-address</golden>
    <golden stanza="interfaces,irb">priority</golden>

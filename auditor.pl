@@ -33,7 +33,7 @@ my $regex_result;
 my $current_unit;
 
 #read in XML config file
-my $seedfile = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], ForceContent => 1);
+my $seedfile = XMLin('seedfile.xml', ForceArray => 1, ForceContent => 1);
 
 
 
