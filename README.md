@@ -6,8 +6,8 @@ It takes an XML based config file as input.  The file should include the search 
 processed.  The script will then run the required searches and output to a file results.txt.  An example config file is included for reference.
 
 Required PM's:
-XML::Simple 
-Data::Dumper 
+XML::Simple, 
+Data::Dumper, 
 autodie
 
 
