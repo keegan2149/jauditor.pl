@@ -5,34 +5,37 @@ use Data::Dumper;
 use strict;
 use autodie;
 
-my $stanza;
-my $compare;
-my @search_options;
-my @grep;
+my @current_file;
+my @current_stanza;
+my @previous_stanza;
+my $search_input;
 my @golden;
 my @golden_lines;
+my $current_golden;
+my $golden_stanza;
+my @golden_grouping;
+my $current_grouping;
+my %scope_hash;
 my @configfiles;
 my @regex;
-my $currentline;
+my $current_line;
+my $current_line_inner;
 my @current_array;
+my @current_array2;
 my $current_regex;
 my @found;
 my @scope;
+my @current_file;
+my @current_stanza;
+my @previous_stanza;
+my $search_input;
+my $regex_result;
+my $current_unit;
 
 #read in XML config file
 my $seedfile = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], ForceContent => 1);
 
 
-##seperate regexs, golden config lines and lines to be grepped into arrays
-#my @regex = grep /regex/, @search_options;
-#my @golden = grep /golden/, @search_options;
-#my @grep = grep /grep/, @search_options;
-
-
-
-#foreach (@search_options) {
-#  print $_."\n";
-#}
 
 #print Dumper($seedfile);
 
@@ -55,21 +58,30 @@ my $seedfile = XMLin('seedfile.xml', ForceArray => [ 'options', 'configfiles'], 
 
 if ($seedfile->{"golden"}) { 
   @golden = @ { $seedfile->{"golden"} }; 
-  foreach $currentline(@golden) {
-    if ($currentline->{'stanza'}) {
-      @current_array = split(',', $currentline->{'stanza'});
-      $currentline->{'stanza'} =  \@current_array;
-    }  
+  foreach $current_line(@golden) {
+    if ($current_line->{'stanza'}) {
+      @current_array = split(',', $current_line->{'stanza'});
+      $current_line->{'stanza'} =  \@current_array;
+    }
+    push @golden_lines , $current_line->{content};   
+  }
+  if ($golden_lines[0] =~ /interface\s\b.*\b/) {
+    foreach (@golden_lines) {
+      if ($_ =~ /unit\s\d+/) {
+        $regex_result = $&;
+        push @golden_grouping , $regex_result;
+      }
+    }   
   }
 }
 
 #pull list of regular experssions into a list of hash references same as above
 if ($seedfile->{"regex"}) { 
   @regex = @ { $seedfile->{"regex"} };
-  foreach $currentline(@regex) {
-    if ($currentline->{'stanza'}) {
-      @current_array = split(',', $currentline->{'stanza'});
-      $currentline->{'stanza'} =  \@current_array;
+  foreach $current_line(@regex) {
+    if ($current_line->{'stanza'}) {
+      @current_array = split(',', $current_line->{'stanza'});
+      $current_line->{'stanza'} =  \@current_array;
     }
   }
 }
@@ -87,32 +99,29 @@ if ($seedfile->{"configfiles"}) {
 
 #print "@configfiles \n @golden \n @regex";
 
-my @currentfile;
-my @current_stanza;
-my @previous_stanza;
-my $search_input;
+
 
 foreach (@configfiles) {
   open (CURRENTFILE, "./config/$_") or die $!;
   print "processing $_\n";
   sleep 3;
-  @currentfile = <CURRENTFILE>;
+  @current_file = <CURRENTFILE>;
   close CURRENTFILE;
 
   open OUTFILE, ">results.txt"  or die $!;
   
-  foreach (@currentfile) {
+  foreach (@current_file) {
     $search_input = $_;
     $search_input =~ s/\r\n/\n/g;
     chomp $search_input;
  
     if ($_ =~ m/\{/) {
-      $currentline = $_;
-      $currentline =~ s/\r\n/\n/g;
-      chomp $currentline;
-      $currentline =~ s/\{.*$//g;
-      $currentline =~ s/\s+//g;
-      push @current_stanza , $currentline;
+      $current_line = $_;
+      $current_line =~ s/\r\n/\n/g;
+      chomp $current_line;
+      $current_line =~ s/\{.*$//g;
+      $current_line =~ s/\s+//g;
+      push @current_stanza , $current_line;
      #print "current stanza=@current_stanza\n";
     }
     if ($_ =~ m/\}/) {
@@ -126,28 +135,38 @@ foreach (@configfiles) {
        #print "comparing @current_stanza and @{ $_->{'stanza'} }\n"; 
        #print "regex = $_->{'content'}\n";
         $current_regex = qr/$_->{'content'}/is;
-#       if (@current_stanza ~~ @{ $_->{'stanza'} })  {
-          if ($search_input ~~ m/$current_regex/) {
-            #dud.. need to figure out why nothing is written to the output file
-            #also need to organize output by regex using the array.  hash maybe?
-            print OUTFILE "$search_input \n";
-#           print "$search_input matches $current_regex in @current_stanza  \n";
-            push @found , "$search_input\n";
-          }
-#       }
+        if ($search_input ~~ m/$current_regex/) {
+          #dud.. need to figure out why nothing is written to the output file
+          #also need to organize output by regex using the array.  hash maybe?
+          print OUTFILE "$search_input \n";
+#         print "$search_input matches $current_regex in @current_stanza  \n";
+          push @found , "$search_input\n";
+        }
       }       
     }  
   }
-}
-
-foreach (@golden) {
-  $current_regex = qr/$_->{'scope'}/is;
-  @scope = grep /set $current_regex/, @currentfile;           
-  foreach(@scope) {
-    $search_input = $_; 
-    $search_input =~ s/\r\n/\n/g;
+  foreach (@golden) {
+    $current_line_inner = "@{ $_->{'stanza'} }\n";
+    chomp $current_line_inner;
+  
+    if ($current_line_inner =~ /interface/) {    
+      $current_regex = qr/^set\s$current_line_inner\s/is;
+      @scope = grep { $_ =~ /$current_regex/ } @current_file;
+      %scope_hash = map { $_ => 1 } @scope;   
+      foreach $current_unit(@golden_grouping) {
+        $current_regex = qr/$current_grouping/is;
+        foreach(@golden_lines) {
+          if ((!$scope_hash{$_}) && ($_ =~ /$current_regex/)) {
+            push @found , "$_ does not exist in $current_line_inner $current_grouping \n";
+            print "$_ does not exist in $current_line_inner $current_grouping \n";
+          }
+        }           
+      }
+    }
   }
 }
+
+
 
 
 close OUTFILE;
