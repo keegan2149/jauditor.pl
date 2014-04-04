@@ -102,7 +102,7 @@ if ($seedfile->{"configfiles"}) {
 
 
 foreach my $file(@configfiles) {
-  open (CURRENTFILE, "./config/$file") or die $!;
+  open CURRENTFILE, "<./config/$file") or die $!;
   print "processing $file\n";
   sleep 3;
   @current_file = <CURRENTFILE>;
