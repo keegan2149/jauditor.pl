@@ -101,14 +101,14 @@ if ($seedfile->{"configfiles"}) {
 
 
 
-foreach (@configfiles) {
-  open (CURRENTFILE, "./config/$_") or die $!;
-  print "processing $_\n";
+foreach my $file(@configfiles) {
+  open (CURRENTFILE, "./config/$file") or die $!;
+  print "processing $file\n";
   sleep 3;
   @current_file = <CURRENTFILE>;
   close CURRENTFILE;
 
-  open OUTFILE, ">results.txt"  or die $!;
+  open OUTFILE, ">./results.txt"  or die $!;
   
   foreach (@current_file) {
     $search_input = $_;
@@ -138,9 +138,9 @@ foreach (@configfiles) {
         if ($search_input ~~ m/$current_regex/) {
           #dud.. need to figure out why nothing is written to the output file
           #also need to organize output by regex using the array.  hash maybe?
-          print OUTFILE "$search_input \n";
+          print OUTFILE "$file: $search_input \n";
 #         print "$search_input matches $current_regex in @current_stanza  \n";
-          push @found , "$search_input\n";
+          push @found , "$file: $search_input\n";
         }
       }       
     }  
@@ -158,7 +158,7 @@ foreach (@configfiles) {
         foreach(@golden_lines) {
           if ((!$scope_hash{$_}) && ($_ =~ /$current_regex/)) {
             push @found , "$_ does not exist in $current_line_inner $current_grouping \n";
-            print "$_ does not exist in $current_line_inner $current_grouping \n";
+            print "OUTFILE $_ does not exist in $current_line_inner $current_grouping \n";
           }
         }           
       }
