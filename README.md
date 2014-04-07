@@ -20,6 +20,24 @@ Golden config - Simple a reverse of the regex.  Takes a list of config terms and
 which config objects to process.  It finds each individual object and returns objects that are missing one of the
 indicated colden config snippets.  
 
+
 The golden config search currently only supports interfaces.  Support for different stanza's will be added later.
 
 This is very much a work in progress.  Feel free to comment or fork and contribute.
+
+Example Seedfile:
+
+<?xml version="1.0"?>
+  <options>
+   <regex stanza="interfaces,irb">ip</regex> 
+   <golden stanza="interfaces,irb">virtual-inet6-address </golden>
+   <golden stanza="interfaces,irb">virtual-link-local-address</golden>
+   <golden stanza="interfaces,irb">priority</golden>
+   <golden stanza="interfaces,irb">no-preempt</golden>
+   <golden stanza="interfaces,irb">accept-data</golden>
+   <golden stanza="interfaces,irb">track interface</golden>
+   <grep stanza="interfaces,irb,family,inet6"> address fe80::1/64 </grep>
+   <configfiles> 
+     Copperfield_MX2_04012014_SET.txt
+   </configfiles>
+  </options>
