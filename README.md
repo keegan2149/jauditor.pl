@@ -26,7 +26,7 @@ The golden config search currently only supports interfaces.  Support for differ
 This is very much a work in progress.  Feel free to comment or fork and contribute.
 
 Example Seedfile:
-
+```
 <?xml version="1.0"?>
   <options>
    <regex stanza="interfaces,irb">ip</regex> 
@@ -41,3 +41,5 @@ Example Seedfile:
      Copperfield_MX2_04012014_SET.txt
    </configfiles>
   </options>
+```
+<code/>
