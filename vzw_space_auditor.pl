@@ -52,6 +52,7 @@ my %search_hash = (
                        "set interfaces irb unit <*> family inet6 address <*> vrrp-inet6-group <*> no-preempt",
                        "set interfaces irb unit <*> family inet6 address <*> vrrp-inet6-group <*> accept-data",
                        "set interfaces irb unit <*> family inet6 address <*> vrrp-inet6-group <*> track interface irb.1078 priority-cost 20",] ],
+  'golden_config_delimiter' => ["vrrp-inet6-group","unit"]
   'duplicate1_multiplier' => 2,
   'duplicate1_sideA' = {'match' => "set interfaces irb unit <*> family inet6 address fe80::1/64\n" , 'configs' => [] },
   'duplicate1_sideB' = {'match' => "set interfaces irb unit <*> family inet6 address fe80::2/64\n" , 'configs' => [] }
@@ -60,7 +61,7 @@ my %search_hash = (
 
 my %config_hash;
 my @no_duplicate_search;
-my $count;
+my $index;
 
 
 #load config files and separate routers for duplicate checks
@@ -87,8 +88,8 @@ foreach my $file(@configfiles) {
   close CURRENTFILE;
   
   foreach(@current_file) {
-    $count++;
-    $config_hash{$file} = [ split(' ' , @current_file) ];
+	#store config file in an array without spaces line breaks comments or show commands or other garbage
+    $config_hash{$file} = [ split(' ' , $_ ) ] unless (($_ =~ /show\b/) || ($_ =~ /\/\*/ && $_ !~ /<.*>/) || ($_ =~ /last\s*commit/) || ( $_ == "#" ) || ($_ == SECRET-DATA));    
   }
   #move array to the right so last element is the number of words in the config file
   unshift @{$config_hash{$file}} , undef; 
@@ -96,21 +97,24 @@ foreach my $file(@configfiles) {
 
 
 #split golden config lines by word
-my $golden_line_count = 0;
-$count = 0;
+my $golden_line_index = 0;
+$index = 0;
 foreach(@{$config_hash{'golden_config'}}) {
-  $count++;
+  $index++;
   my @disposable;
-  foreach($current_line(@{$_->[$count]}) {
+  foreach($current_line(@{$_->[$index]}) {
     push( @disposable, split(' ', $current_line);
-    $golden_line_count++
+    $golden_line_index++
   }
-  $search_hash{'golden_config'}[$count] = \@disposable
+  #move first array element to 1 for symetry
+  unshift @disposable , undef;
+  $search_hash{'golden_config'}[$index] = \@disposable
 }
 
 
 #Begin config audit
-my $inner_count = 0;
+my $golden_index = 1;
+my $search_index = 0;
 my $current_word_inner;
 my $golden_matched_lines = 0;
 my $matched_words = 0;
@@ -121,60 +125,57 @@ my $previous_config_object;
 my $object_depth = 0;
 my $sentence_length = 0;
 my $deepest_object;
+my @configuration_object;
+my @prevoius_configuration_object;
+
+#need to update to record config hierarchy in an array or rewrite in a language with objects
 
 foreach $file(@configfiles) {
-  $count=0;
+  $index=0;
   foreach $current_word(@{$hash{$file}}) {
-    $count++;
+    $index++;
     $sentence_length++;
+    $object_depth++;
+    if ($current_word =~ /)
     #save the first and second level config directives
-    if (${$config_hash{$file}}[$count+1] == "{" && $level == 0) {
-      $previous_config_hierarchy = $config_hierarchy;
-      my $first_word = ($count-$sentence_length)+1;
-      $deepest_object = $config_hierarchy = join('' , @{$config_hash{$file}}[$first_word..$count]);
-      $sentence_length = 0;
+    if (${$config_hash{$file}}[$index+1] == "{") && ($level = 1) && ($level <= $object_depth) {
+      @previous_configuration_object = @configuration_object;
+      my $first_word = ($index-$sentence_length)+1;
+      $configuration_object[$level] = join('' , @{$config_hash{$file}}[$first_word..$index]);
+      $sentence_length = 1;
+      $object_depth = 1;
     } 
-    elsif (${$hash{$file}}[$count+1] == "{" && $level == 1) {
-	  $previous_config_object = $config_object;
-      my $first_word = ($count-$sentence_length)+1;
-      $deepest_object = $config_object = join('' , @{$config_hash{$file}}[$first_word..$count]);
-      $sentence_length = 0;
+    elsif (${$config_hash{$file}}[$index+1] == "{") && ($level > 1) && ($level <= $object_depth ) {
+      my $first_word = ($index-$sentence_length)+1;
+      $configuration_object[$level] = join('' , @{$config_hash{$file}}[$first_word..$index]);
     }
     elsif ($current_word == "{" ) {
-	  my $first_word = ($count-$sentence_length)+1;
-      $deepest_object = ${$hash{$file}}[$first_word..$count]]
-      $sentence_length = 0;
       $level++;
       $object_depth++;
     }
     elsif ($current_word == "}" ) {
         $level--;
-	if ($level < $object_depth  &&  $golden_match != $golden_line_count) {
+	if ($level < $object_depth  &&  $golden_match != $golden_line_index) {
 	  push( @non_compliant_lines , "$config");
+	  $golden_skip = 0;
 	}
 
     }
     #compare lines being processed to golden config word by word
-    foreach(@{$config_hash{'golden_config'}}) {
-      if (${$_->[$inner_count]}[0] == "set" ) {
-        last unless ($config_hierarchy ==  ${$_->[$inner_count]}[1] );     
-        foreach($current_word_inner(@{$_->[$inner_count]}) {
-          if ($_ == "set" || $_ == "<*>" ){
-            $golden_skip++;
-            next;
-          }
-          last unless ($config_object ==  ${$_->[$inner_count]}[2] );
-          my $inner_regex = qr/$current_word("\n")?/is
-          if ($current_word_inner == $inner_regex) {
-            $matched_words++;
-          } elsif (($matched_words + $golden_skip) == (scalar @{$_->[$inner_count]}) {
-            $golden_matched_lines++;              
-          }                         
-        }
-        $inner_count++;
+    foreach $golden_current_array(@{$config_hash{'golden_config'}}) {
+      foreach $search_current(@configuration_object) {
+	    foreach $golden_current_word(@{$golden_current_array}) {
+		  
+		  if ($golden_current_word == "set") {
+		    last unless ($config_object[0] == $golden_current->[$$golden_index]->[1] )	
+	      }
+	      if ($_ == "set" || $_ == "<*>" ){
+		    $golden_skip++;
+		    next;
+		  }
+		}
       }
     }
-
   }
 }
 
