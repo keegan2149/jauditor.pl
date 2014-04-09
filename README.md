@@ -5,11 +5,13 @@ This is a basic meant to help audit juniper device configs in text format.
 It takes an XML based config file as input.  The file should include the search criteria and a list of files to be
 processed.  The script will then run the required searches and output to a file results.txt.  An example config file is included for reference.
 
+
 Required PM's:
+```
 XML::Simple, 
 Data::Dumper, 
 autodie
-
+```
 
 Version 1.0
 ============
